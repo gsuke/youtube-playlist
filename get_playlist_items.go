@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -45,7 +46,13 @@ func main() {
 	}
 	df := dataframe.LoadStructs(videos)
 
-	if err := df.WriteCSV(os.Stdout); err != nil {
+	file, err := os.Create("playlist_items.csv")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+
+	if err := df.WriteCSV(file); err != nil {
 		log.Fatalf("Error creating YouTube client: %v", err)
 	}
 }
