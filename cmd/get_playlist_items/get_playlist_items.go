@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -22,7 +23,12 @@ type Video struct {
 
 func main() {
 
-	const playlistId = ""
+	// Flag
+	playlistId := flag.String("i", "", "Playlist ID")
+	flag.Parse()
+	if *playlistId == "" {
+		log.Fatalln("Specify the playlist ID. e.g. go run ./cmd/get_playlist_items -i abcdefghijklmnopqrstuvwxyz")
+	}
 
 	client := oauth2.GetClient(youtube.YoutubeReadonlyScope)
 
@@ -32,7 +38,7 @@ func main() {
 	}
 
 	response, err := service.PlaylistItems.List([]string{"snippet,status"}).
-		PlaylistId(playlistId).
+		PlaylistId(*playlistId).
 		MaxResults(3).
 		Do()
 	handleError(err, "")
