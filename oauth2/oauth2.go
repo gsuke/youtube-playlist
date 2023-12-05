@@ -1,4 +1,4 @@
-package main
+package oauth2
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ import (
 
 // getClient uses a Context and Config to retrieve a Token then generate a Client.
 // It returns the generated Client.
-func getClient(scope string) *http.Client {
+func GetClient(scope string) *http.Client {
 	ctx := context.Background()
 
 	b, err := os.ReadFile("client_secret.json")

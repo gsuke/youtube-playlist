@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"youtubeapi/oauth2"
 
 	"github.com/go-gota/gota/dataframe"
+	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -21,9 +24,9 @@ func main() {
 
 	const playlistId = ""
 
-	client := getClient(youtube.YoutubeReadonlyScope)
+	client := oauth2.GetClient(youtube.YoutubeReadonlyScope)
 
-	service, err := youtube.New(client)
+	service, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		log.Fatalf("Error creating YouTube client: %v", err)
 	}
@@ -54,5 +57,14 @@ func main() {
 
 	if err := df.WriteCSV(file); err != nil {
 		log.Fatalf("Error creating YouTube client: %v", err)
+	}
+}
+
+func handleError(err error, message string) {
+	if message == "" {
+		message = "Error making API call"
+	}
+	if err != nil {
+		log.Fatalf(message+": %v", err.Error())
 	}
 }
