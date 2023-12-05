@@ -37,31 +37,49 @@ func main() {
 		log.Fatalf("Error creating YouTube client: %v", err)
 	}
 
-	response, err := service.PlaylistItems.List([]string{"snippet,status"}).
-		PlaylistId(*playlistId).
-		MaxResults(3).
-		Do()
-	handleError(err, "")
-
+	// Get all playlist items
 	videos := []Video{}
-	for _, item := range response.Items {
-		videos = append(videos, Video{
-			VideoId:      item.Snippet.ResourceId.VideoId,
-			VideoTitle:   item.Snippet.Title,
-			ChannelId:    item.Snippet.VideoOwnerChannelId,
-			ChannelTitle: item.Snippet.VideoOwnerChannelTitle,
-			IsPublic:     item.Status.PrivacyStatus == "public",
-		})
-	}
-	df := dataframe.LoadStructs(videos)
+	nextPageToken := ""
+	retrievedItemCount := 0
+	for {
 
+		call := service.PlaylistItems.List([]string{"snippet,status"}).
+			PlaylistId(*playlistId).
+			MaxResults(50) // Probably MaxResults is max 50
+		if nextPageToken != "" {
+			call = call.PageToken(nextPageToken)
+		}
+
+		response, err := call.Do()
+		handleError(err, "")
+
+		nextPageToken = response.NextPageToken
+		retrievedItemCount += len(response.Items)
+		log.Printf("Page loaded. (%d/%d)\n", retrievedItemCount, response.PageInfo.TotalResults)
+
+		for _, item := range response.Items {
+			videos = append(videos, Video{
+				VideoId:      item.Snippet.ResourceId.VideoId,
+				VideoTitle:   item.Snippet.Title,
+				ChannelId:    item.Snippet.VideoOwnerChannelId,
+				ChannelTitle: item.Snippet.VideoOwnerChannelTitle,
+				IsPublic:     item.Status.PrivacyStatus == "public",
+			})
+		}
+
+		if response.NextPageToken == "" {
+			break
+		}
+	}
+
+	// Write to CSV
 	file, err := os.Create("playlist_items.csv")
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer file.Close()
 
-	if err := df.WriteCSV(file); err != nil {
+	if err := dataframe.LoadStructs(videos).WriteCSV(file); err != nil {
 		log.Fatalf("Error creating YouTube client: %v", err)
 	}
 }
